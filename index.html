@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Order Paste</title>
+</head>
+<body>
+
+<h3>Order Paste Karo</h3>
+
+<input type="text" id="orderInput" placeholder="Paste here">
+<br><br>
+<button onclick="saveOrder()">Submit</button>
+
+<div id="orders"></div>
+
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbwZWdtly5915Qnsf1_VeYZFt3GsqBv_ZAhl40kmjR3xywTMS5nJ-e9Q-_ipozEObN8r/exec";
+
+// Page load par data load
+window.onload = function() {
+  fetch(API_URL)
+    .then(res => res.json())
+    .then(data => {
+      data.forEach((text, index) => {
+        let p = document.createElement("p");
+        p.innerText = "Order " + (index + 1) + ": " + text;
+        document.getElementById("orders").appendChild(p);
+      });
+    });
+};
+
+function saveOrder() {
+  let text = document.getElementById("orderInput").value;
+  if(text === "") return;
+
+  fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify({ order: text })
+  })
+  .then(() => location.reload()); // refresh ke baad bhi rahe
+
+  document.getElementById("orderInput").value = "";
+}
+</script>
+
+</body>
+</html>
