@@ -36,25 +36,35 @@
       border-radius: 10px;
       font-size: 14px;
       word-wrap: break-word;
-      white-space: pre-wrap; /* preserve new lines */
+      white-space: pre-wrap;
+      position: relative;
     }
 
     .sent {
-      background: #dcf8c6;
       margin-left: auto;
       border-bottom-right-radius: 0;
+      color: #000;
+      background: #dcf8c6;
     }
 
     .received {
-      background: white;
       margin-right: auto;
       border-bottom-left-radius: 0;
+      color: #000;
+    }
+
+    .meta {
+      font-size: 10px;
+      color: #555;
+      text-align: right;
+      margin-top: 4px;
     }
 
     footer {
       display: flex;
       padding: 10px;
       background: #f0f0f0;
+      align-items: center;
     }
 
     textarea {
@@ -69,14 +79,22 @@
       font-size: 14px;
     }
 
-    button {
+    button, #imageInput {
       margin-left: 8px;
-      padding: 10px 16px;
-      border: none;
-      background: #075e54;
-      color: white;
-      border-radius: 50%;
       cursor: pointer;
+    }
+
+    #imageInput {
+      border: none;
+      background: none;
+      font-size: 18px;
+    }
+
+    img.chat-img {
+      max-width: 200px;
+      border-radius: 10px;
+      display: block;
+      margin-top: 5px;
     }
   </style>
 </head>
@@ -89,37 +107,65 @@
 
 <footer>
   <textarea id="orderInput" placeholder="Type your order..."></textarea>
-  <button onclick="saveOrder()">➤</button>
+  <input type="file" id="imageInput" accept="image/*">
+  <button onclick="sendText()">➤</button>
 </footer>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbwZWdtly5915Qnsf1_VeYZFt3GsqBv_ZAhl40kmjR3xywTMS5nJ-e9Q-_ipozEObN8r/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbyTn-RFJBi5e9ul-dMQTzFb7geoYW7OgCQWYnbHadrkAx-ud3Lyr_Q06D2uRHKsom4j/exec";
 const chatBox = document.getElementById("chatBox");
 const orderInput = document.getElementById("orderInput");
+const imageInput = document.getElementById("imageInput");
+
+// Ask for username
+let username = prompt("Enter your name:");
+if (!username) username = "Anonymous";
 
 let messages = []; // store fetched messages
+const userColors = {};
 
-// Load messages
-function loadMessages() {
-  fetch(API_URL)
-    .then(res => res.json())
-    .then(data => {
-      if (JSON.stringify(data) !== JSON.stringify(messages)) {
-        chatBox.innerHTML = ""; // clear old messages
-        data.forEach(text => addMessage(text, "received"));
-        messages = data; // update local cache
-        scrollBottom();
-      }
-    })
-    .catch(err => console.log("Error loading messages:", err));
+// Generate consistent color for username
+function getColor(name) {
+  if (userColors[name]) return userColors[name];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  const color = `hsl(${hash % 360}, 70%, 80%)`;
+  userColors[name] = color;
+  return color;
+}
+
+// Format current time hh:mm
+function getTime() {
+  const now = new Date();
+  return now.getHours().toString().padStart(2,'0') + ":" + now.getMinutes().toString().padStart(2,'0');
 }
 
 // Add message bubble
-function addMessage(text, type) {
+function addMessage(text="", type, user="", time="", image=null) {
   let div = document.createElement("div");
   div.className = "msg " + type;
-  div.innerText = text;
+
+  // color for received messages
+  if (type === "received") div.style.background = getColor(user);
+
+  if (text) div.innerText = text;
+
+  if (image) {
+    let img = document.createElement("img");
+    img.src = image;
+    img.className = "chat-img";
+    div.appendChild(img);
+  }
+
+  if (user || time) {
+    let meta = document.createElement("div");
+    meta.className = "meta";
+    meta.innerText = (user ? user : "") + (time ? " • " + time : "");
+    div.appendChild(meta);
+  }
+
   chatBox.appendChild(div);
+  scrollBottom();
 }
 
 // Scroll to bottom
@@ -127,37 +173,90 @@ function scrollBottom() {
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
-// Save order
-function saveOrder() {
-  let text = orderInput.value.trim();
-  if (!text) return;
+// Send text + image
+function sendText() {
+  const text = orderInput.value.trim();
+  const time = getTime();
+  const file = imageInput.files[0];
 
-  addMessage(text, "sent");
-  scrollBottom();
+  if (!text && !file) return;
 
-  fetch(API_URL, {
-    method: "POST",
-    body: JSON.stringify({ order: text })
-  });
+  // handle image
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const base64 = e.target.result;
+      addMessage(text, "sent", username, time, base64);
 
+      fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({ text: text, image: base64, user: username, time: time })
+      });
+    };
+    reader.readAsDataURL(file);
+  } else {
+    // only text
+    addMessage(text, "sent", username, time);
+    fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify({ text: text, user: username, time: time })
+    });
+  }
+
+  // reset inputs
   orderInput.value = "";
+  imageInput.value = "";
 }
 
 // Enter = send, Shift+Enter = new line
 orderInput.addEventListener("keydown", function(e) {
   if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
-    saveOrder();
+    sendText();
   }
 });
+
+// Load messages from API (old + new support)
+function loadMessages() {
+  fetch(API_URL)
+    .then(res => res.json())
+    .then(data => {
+      if (JSON.stringify(data) !== JSON.stringify(messages)) {
+        chatBox.innerHTML = "";
+
+        data.forEach(item => {
+          let text = "";
+          let image = null;
+          let user = "User";
+          let time = "";
+
+          if (typeof item === "object") {
+            text = item.text || item.order || "";
+            image = item.image || null;
+            user = item.user || "User";
+            time = item.time || "";
+          } else if (typeof item === "string") {
+            text = item; // old plain text messages
+          }
+
+          const type = user === username ? "sent" : "received";
+          addMessage(text, type, user, time, image);
+        });
+
+        messages = data;
+      }
+    })
+    .catch(err => console.log("Error loading messages:", err));
+}
 
 // Initial load
 loadMessages();
 
-// Auto refresh every 2 seconds
+// Auto refresh every 2 sec
 setInterval(loadMessages, 2000);
 
 </script>
 
 </body>
 </html>
+
