@@ -79,15 +79,32 @@
       font-size: 14px;
     }
 
-    button, #imageInput {
-      margin-left: 8px;
-      cursor: pointer;
+    /* Hide default file input */
+    #imageInput {
+      display: none;
     }
 
-    #imageInput {
+    /* Photo icon button */
+    .photo-btn {
+      width: 36px;
+      height: 36px;
+      background: url('8661e385-029d-47af-a377-db89ea9a2b3b.png') no-repeat center center;
+      background-size: cover;
       border: none;
-      background: none;
+      cursor: pointer;
+      border-radius: 50%;
+      margin-left: 8px;
+    }
+
+    button.send-btn {
+      margin-left: 8px;
+      padding: 0 14px;
+      border: none;
+      background: #075e54;
+      color: white;
+      border-radius: 50%;
       font-size: 18px;
+      cursor: pointer;
     }
 
     img.chat-img {
@@ -108,7 +125,8 @@
 <footer>
   <textarea id="orderInput" placeholder="Type your order..."></textarea>
   <input type="file" id="imageInput" accept="image/*">
-  <button onclick="sendText()">➤</button>
+  <button class="photo-btn" onclick="document.getElementById('imageInput').click();"></button>
+  <button class="send-btn" onclick="sendText()">➤</button>
 </footer>
 
 <script>
@@ -121,7 +139,7 @@ const imageInput = document.getElementById("imageInput");
 let username = prompt("Enter your name:");
 if (!username) username = "Anonymous";
 
-let messages = []; // store fetched messages
+let messages = []; 
 const userColors = {};
 
 // Generate consistent color for username
@@ -145,7 +163,6 @@ function addMessage(text="", type, user="", time="", image=null) {
   let div = document.createElement("div");
   div.className = "msg " + type;
 
-  // color for received messages
   if (type === "received") div.style.background = getColor(user);
 
   if (text) div.innerText = text;
@@ -181,7 +198,6 @@ function sendText() {
 
   if (!text && !file) return;
 
-  // handle image
   if (file) {
     const reader = new FileReader();
     reader.onload = function(e) {
@@ -195,7 +211,6 @@ function sendText() {
     };
     reader.readAsDataURL(file);
   } else {
-    // only text
     addMessage(text, "sent", username, time);
     fetch(API_URL, {
       method: "POST",
@@ -203,7 +218,6 @@ function sendText() {
     });
   }
 
-  // reset inputs
   orderInput.value = "";
   imageInput.value = "";
 }
@@ -236,7 +250,7 @@ function loadMessages() {
             user = item.user || "User";
             time = item.time || "";
           } else if (typeof item === "string") {
-            text = item; // old plain text messages
+            text = item;
           }
 
           const type = user === username ? "sent" : "received";
@@ -254,9 +268,7 @@ loadMessages();
 
 // Auto refresh every 2 sec
 setInterval(loadMessages, 2000);
-
 </script>
 
 </body>
 </html>
-
