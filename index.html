@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Order Chat</title>
+  <title>Live Order Chat</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <style>
@@ -36,6 +36,7 @@
       border-radius: 10px;
       font-size: 14px;
       word-wrap: break-word;
+      white-space: pre-wrap; /* preserve new lines */
     }
 
     .sent {
@@ -56,12 +57,16 @@
       background: #f0f0f0;
     }
 
-    input {
+    textarea {
       flex: 1;
       padding: 10px;
       border-radius: 20px;
       border: 1px solid #ccc;
       outline: none;
+      resize: none;
+      height: 50px;
+      font-family: Arial, sans-serif;
+      font-size: 14px;
     }
 
     button {
@@ -78,29 +83,38 @@
 
 <body>
 
-<header>Order Chat</header>
+<header>Live Order Chat</header>
 
 <div id="chatBox"></div>
 
 <footer>
-  <input type="text" id="orderInput" placeholder="Type your order...">
+  <textarea id="orderInput" placeholder="Type your order..."></textarea>
   <button onclick="saveOrder()">➤</button>
 </footer>
 
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbwZWdtly5915Qnsf1_VeYZFt3GsqBv_ZAhl40kmjR3xywTMS5nJ-e9Q-_ipozEObN8r/exec";
 const chatBox = document.getElementById("chatBox");
+const orderInput = document.getElementById("orderInput");
+
+let messages = []; // store fetched messages
 
 // Load messages
-window.onload = () => {
+function loadMessages() {
   fetch(API_URL)
     .then(res => res.json())
     .then(data => {
-      data.forEach(text => addMessage(text, "received"));
-      scrollBottom();
-    });
-};
+      if (JSON.stringify(data) !== JSON.stringify(messages)) {
+        chatBox.innerHTML = ""; // clear old messages
+        data.forEach(text => addMessage(text, "received"));
+        messages = data; // update local cache
+        scrollBottom();
+      }
+    })
+    .catch(err => console.log("Error loading messages:", err));
+}
 
+// Add message bubble
 function addMessage(text, type) {
   let div = document.createElement("div");
   div.className = "msg " + type;
@@ -108,10 +122,12 @@ function addMessage(text, type) {
   chatBox.appendChild(div);
 }
 
+// Scroll to bottom
 function scrollBottom() {
   chatBox.scrollTop = chatBox.scrollHeight;
 }
 
+// Save order
 function saveOrder() {
   let text = orderInput.value.trim();
   if (!text) return;
@@ -126,6 +142,21 @@ function saveOrder() {
 
   orderInput.value = "";
 }
+
+// Enter = send, Shift+Enter = new line
+orderInput.addEventListener("keydown", function(e) {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    saveOrder();
+  }
+});
+
+// Initial load
+loadMessages();
+
+// Auto refresh every 2 seconds
+setInterval(loadMessages, 2000);
+
 </script>
 
 </body>
