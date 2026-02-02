@@ -88,11 +88,11 @@
     .photo-btn {
       width: 36px;
       height: 36px;
-      background: url('8661e385-029d-47af-a377-db89ea9a2b3b.png') no-repeat center center;
-      background-size: cover;
-      border: none;
+      /* background: url('8661e385-029d-47af-a377-db89ea9a2b3b.png') no-repeat center center;
+      background-size: cover; 
+      border: none;*/
       cursor: pointer;
-      border-radius: 50%;
+      /* border-radius: 0%; */
       margin-left: 8px;
     }
 
@@ -125,7 +125,7 @@
 <footer>
   <textarea id="orderInput" placeholder="Type your order..."></textarea>
   <input type="file" id="imageInput" accept="image/*">
-  <button class="photo-btn" onclick="document.getElementById('imageInput').click();"></button>
+  <button class="photo-btn" onclick="document.getElementById('imageInput').click();">PIC</button>
   <button class="send-btn" onclick="sendText()">➤</button>
 </footer>
 
@@ -272,3 +272,4 @@ setInterval(loadMessages, 2000);
 
 </body>
 </html>
+
