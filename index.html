@@ -1,45 +1,130 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Order Paste</title>
+  <title>Order Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #ece5dd;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    header {
+      background: #075e54;
+      color: white;
+      padding: 12px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    #chatBox {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+    }
+
+    .msg {
+      max-width: 75%;
+      padding: 10px 14px;
+      margin: 6px 0;
+      border-radius: 10px;
+      font-size: 14px;
+      word-wrap: break-word;
+    }
+
+    .sent {
+      background: #dcf8c6;
+      margin-left: auto;
+      border-bottom-right-radius: 0;
+    }
+
+    .received {
+      background: white;
+      margin-right: auto;
+      border-bottom-left-radius: 0;
+    }
+
+    footer {
+      display: flex;
+      padding: 10px;
+      background: #f0f0f0;
+    }
+
+    input {
+      flex: 1;
+      padding: 10px;
+      border-radius: 20px;
+      border: 1px solid #ccc;
+      outline: none;
+    }
+
+    button {
+      margin-left: 8px;
+      padding: 10px 16px;
+      border: none;
+      background: #075e54;
+      color: white;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+  </style>
 </head>
+
 <body>
 
-<h3>Order Paste Karo</h3>
+<header>Order Chat</header>
 
-<input type="text" id="orderInput" placeholder="Paste here">
-<br><br>
-<button onclick="saveOrder()">Submit</button>
+<div id="chatBox"></div>
 
-<div id="orders"></div>
+<footer>
+  <input type="text" id="orderInput" placeholder="Type your order...">
+  <button onclick="saveOrder()">➤</button>
+</footer>
 
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbwZWdtly5915Qnsf1_VeYZFt3GsqBv_ZAhl40kmjR3xywTMS5nJ-e9Q-_ipozEObN8r/exec";
+const chatBox = document.getElementById("chatBox");
 
-// Page load par data load
-window.onload = function() {
+// Load messages
+window.onload = () => {
   fetch(API_URL)
     .then(res => res.json())
     .then(data => {
-      data.forEach((text, index) => {
-        let p = document.createElement("p");
-        p.innerText = "Order " + (index + 1) + ": " + text;
-        document.getElementById("orders").appendChild(p);
-      });
+      data.forEach(text => addMessage(text, "received"));
+      scrollBottom();
     });
 };
 
+function addMessage(text, type) {
+  let div = document.createElement("div");
+  div.className = "msg " + type;
+  div.innerText = text;
+  chatBox.appendChild(div);
+}
+
+function scrollBottom() {
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
 function saveOrder() {
-  let text = document.getElementById("orderInput").value;
-  if(text === "") return;
+  let text = orderInput.value.trim();
+  if (!text) return;
+
+  addMessage(text, "sent");
+  scrollBottom();
 
   fetch(API_URL, {
     method: "POST",
     body: JSON.stringify({ order: text })
-  })
-  .then(() => location.reload()); // refresh ke baad bhi rahe
+  });
 
-  document.getElementById("orderInput").value = "";
+  orderInput.value = "";
 }
 </script>
 
