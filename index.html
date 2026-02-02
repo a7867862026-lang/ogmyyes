@@ -118,7 +118,10 @@
 
 <body>
 
-<header>Live Order Chat</header>
+<header>Live Order Chat
+<button class="clear-btn" onclick="clearChat()">🗑 Clear Chat</button>
+
+</header>
 
 <div id="chatBox"></div>
 
@@ -130,7 +133,7 @@
 </footer>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbyTn-RFJBi5e9ul-dMQTzFb7geoYW7OgCQWYnbHadrkAx-ud3Lyr_Q06D2uRHKsom4j/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbwBO6nOaDsf39URNs_PtdgjYRQunrqK6ZMQA13YHiDtuchfRyYCaNAvkzGl3B89Yykn/exec";
 const chatBox = document.getElementById("chatBox");
 const orderInput = document.getElementById("orderInput");
 const imageInput = document.getElementById("imageInput");
@@ -269,7 +272,22 @@ loadMessages();
 // Auto refresh every 2 sec
 setInterval(loadMessages, 2000);
 </script>
+<script>
+function clearChat() {
+  if (!confirm("Clear all messages?")) return;
+
+  fetch(API_URL, {
+    method: "POST",
+    body: JSON.stringify({ action: "clear" })
+  })
+  .then(res => res.json())
+  .then(() => {
+    document.getElementById("chatBox").innerHTML = "";
+  });
+}
+</script>
 
 </body>
 </html>
+
 
